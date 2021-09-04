@@ -1,4 +1,8 @@
 package org.locker;
 
-public interface EntityLocker {
+interface EntityLocker<ID> {
+
+    void lock(ID id);
+
+    void unlock(ID id);
 }
