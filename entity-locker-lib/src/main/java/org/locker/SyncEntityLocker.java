@@ -4,7 +4,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class SyncEntityLocker<ID> extends EntityLockerDecorator<ID> {
+public final class SyncEntityLocker<ID> extends EntityLockerDecorator<ID> {
     private final ConcurrentHashMap<ID, ReentrantLock> locks;
 
     public SyncEntityLocker(EntityLocker<ID> locker) {
@@ -42,12 +42,7 @@ public class SyncEntityLocker<ID> extends EntityLockerDecorator<ID> {
         return lock;
     }
 
-
-    ConcurrentHashMap<ID, ReentrantLock> getLocks() {
-        return locks;
-    }
-
-    public int getLocksNumber() {
+    int getLocksNumber() {
         return locks.size();
     }
 }

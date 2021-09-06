@@ -4,10 +4,13 @@ import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.lang.ref.WeakReference;
 import java.util.concurrent.CompletableFuture;
 
+import static java.lang.Math.random;
 import static java.util.concurrent.CompletableFuture.runAsync;
 import static java.util.concurrent.CompletableFuture.supplyAsync;
+import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -15,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SyncEntityLockerTest {
     private SyncEntityLocker<Integer> locker;
-    private Integer counter;
+    private volatile int counter;
 
     @BeforeEach
     void setUp() {
@@ -26,7 +29,7 @@ class SyncEntityLockerTest {
     @Test
     @SneakyThrows
     void sync() {
-        int endExclusive = 10000;
+        int endExclusive = 100000;
 
         Thread thread1 = new Thread(() -> doIncrements(endExclusive));
         thread1.start();
@@ -113,14 +116,25 @@ class SyncEntityLockerTest {
         Thread.sleep(millis);
     }
 
+    @SneakyThrows
     private void doIncrements(int endExclusive) {
         int i = endExclusive;
         while (i-- != 0) {
-            locker.lock(1);
+            int numberOfLocks = (int) (random() * 3 + 1);
+            for (int j = 0; j < numberOfLocks; j++) {
+                int lockType = (int) (random() * 2);
+                if (lockType == 0) {
+                    locker.lock(1);
+                } else {
+                    locker.tryLock(1, 1, HOURS);
+                }
+            }
             try {
                 counter++;
             } finally {
-                locker.unlock(1);
+                for (int j = 0; j < numberOfLocks; j++) {
+                    locker.unlock(1);
+                }
             }
         }
     }

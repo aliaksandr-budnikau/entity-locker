@@ -4,7 +4,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class GlobalSyncEntityLocker<ID> {
+public final class GlobalSyncEntityLocker<ID> {
     private final SyncEntityLocker<ID> locker;
     private final ReentrantLock globalLock = new ReentrantLock();
     private final AtomicInteger entityLocksCounter = new AtomicInteger();
@@ -15,8 +15,8 @@ public class GlobalSyncEntityLocker<ID> {
 
     public void lock(ID id) throws InterruptedException {
         awaitGlobalLock();
-        entityLocksCounter.incrementAndGet();
         locker.lock(id);
+        entityLocksCounter.incrementAndGet();
     }
 
     public boolean tryLock(ID id, long timeout, TimeUnit unit) throws InterruptedException {
