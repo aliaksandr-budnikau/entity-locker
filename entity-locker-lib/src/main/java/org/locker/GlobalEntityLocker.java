@@ -77,18 +77,18 @@ public final class GlobalEntityLocker<ID> {
     }
 
     private void awaitEntityLock() throws InterruptedException {
-        synchronized (entityLocksCounter) {
-            while (entityLocksCounter.get() != 0) {
-                entityLocksCounter.wait();
+        synchronized (globalLock) {
+            while (entityLocksCounter.get() != 0 && !globalLock.isHeldByCurrentThread()) {
+                globalLock.wait();
             }
         }
     }
 
     private boolean awaitEntityLock(long timeout, TimeUnit unit) throws InterruptedException {
-        synchronized (entityLocksCounter) {
+        synchronized (globalLock) {
             long startTime = System.currentTimeMillis();
-            while (entityLocksCounter.get() != 0) {
-                unit.timedWait(entityLocksCounter, timeout);
+            while (entityLocksCounter.get() != 0 && !globalLock.isHeldByCurrentThread()) {
+                unit.timedWait(globalLock, timeout);
                 long currentTime = System.currentTimeMillis();
                 if ((currentTime - startTime) >= unit.toMillis(timeout)) {
                     return false;

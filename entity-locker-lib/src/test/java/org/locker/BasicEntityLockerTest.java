@@ -127,20 +127,25 @@ class BasicEntityLockerTest {
     private void doIncrements(int endExclusive) {
         int i = endExclusive;
         while (i-- != 0) {
+            int id = (int) (random() * 2);
             int numberOfLocks = (int) (random() * 3 + 1);
             for (int j = 0; j < numberOfLocks; j++) {
                 int lockType = (int) (random() * 2);
                 if (lockType == 0) {
-                    locker.lock(1);
+                    locker.lock(id);
                 } else {
-                    locker.tryLock(1, 1, HOURS);
+                    locker.tryLock(id, 1, HOURS);
                 }
             }
             try {
-                counter++;
+                if (id == 1) {
+                    counter++;
+                } else {
+                    i++;
+                }
             } finally {
                 for (int j = 0; j < numberOfLocks; j++) {
-                    locker.unlock(1);
+                    locker.unlock(id);
                 }
             }
         }

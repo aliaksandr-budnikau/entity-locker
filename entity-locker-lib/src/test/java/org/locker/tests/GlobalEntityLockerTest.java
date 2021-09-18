@@ -345,20 +345,37 @@ class GlobalEntityLockerTest {
     private void doIncrements(int endExclusive) {
         int i = endExclusive;
         while (i-- != 0) {
+            int id = (int) (random() * 2);
             int numberOfLocks = (int) (random() * 3 + 1);
             for (int j = 0; j < numberOfLocks; j++) {
                 int lockType = (int) (random() * 2);
                 if (lockType == 0) {
-                    locker.lock();
+                    if (id == 1) {
+                        locker.lock();
+                    } else {
+                        locker.lock(id);
+                    }
                 } else {
-                    locker.tryLock(1, HOURS);
+                    if (id == 1) {
+                        locker.tryLock(1, HOURS);
+                    } else {
+                        locker.tryLock(id, 1, HOURS);
+                    }
                 }
             }
             try {
-                counter++;
+                if (id == 1) {
+                    counter++;
+                } else {
+                    i++;
+                }
             } finally {
                 for (int j = 0; j < numberOfLocks; j++) {
-                    locker.unlock();
+                    if (id == 1) {
+                        locker.unlock();
+                    } else {
+                        locker.unlock(id);
+                    }
                 }
             }
         }
