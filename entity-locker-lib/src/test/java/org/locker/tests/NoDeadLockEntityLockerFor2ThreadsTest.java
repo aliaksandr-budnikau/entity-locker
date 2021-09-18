@@ -4,6 +4,7 @@ import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
 import org.locker.BasicEntityLocker;
 import org.locker.DeadlockDetectedException;
+import org.locker.EntityLocker;
 import org.locker.EscalationEntityLocker;
 import org.locker.NoDeadLockEntityLocker;
 
@@ -22,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 class NoDeadLockEntityLockerFor2ThreadsTest {
     public static final int N_THREADS = 3;
-    private NoDeadLockEntityLocker<Integer> locker;
+    private EntityLocker<Integer> locker;
     private CountDownLatch countDownLatchStopper;
     private ExecutorService threadPool;
 
@@ -36,7 +37,7 @@ class NoDeadLockEntityLockerFor2ThreadsTest {
     }
 
     private void reproduceDeadlock() {
-        locker = new NoDeadLockEntityLocker<>(new EscalationEntityLocker<>(new BasicEntityLocker<>(), 100));
+        locker = new EscalationEntityLocker<>(new NoDeadLockEntityLocker<>(new BasicEntityLocker<>()), 100);
         countDownLatchStopper = new CountDownLatch(2);
         assertThrows(DeadlockDetectedException.class, () -> {
             CompletableFuture<Void> future1 = runAsync(() -> {

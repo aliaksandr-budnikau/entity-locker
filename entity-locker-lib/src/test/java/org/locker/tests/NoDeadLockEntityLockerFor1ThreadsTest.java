@@ -3,6 +3,7 @@ package org.locker.tests;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
 import org.locker.BasicEntityLocker;
+import org.locker.EntityLocker;
 import org.locker.EscalationEntityLocker;
 import org.locker.NoDeadLockEntityLocker;
 
@@ -21,7 +22,7 @@ class NoDeadLockEntityLockerFor1ThreadsTest {
 
     @SneakyThrows
     private void reproduceDeadlock() {
-        NoDeadLockEntityLocker<Integer> locker = new NoDeadLockEntityLocker<>(new EscalationEntityLocker<>(new BasicEntityLocker<>(), 100));
+        EntityLocker<Integer> locker = new NoDeadLockEntityLocker<>(new EscalationEntityLocker<>(new BasicEntityLocker<>(), 100));
         locker.lock(1);
         try {
             locker.lock(1);

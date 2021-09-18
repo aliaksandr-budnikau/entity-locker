@@ -4,6 +4,7 @@ import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.locker.BasicEntityLocker;
+import org.locker.EscalationEntityLocker;
 import org.locker.GlobalEntityLocker;
 
 import java.util.concurrent.CountDownLatch;
@@ -29,7 +30,7 @@ class GlobalEntityLockerTest {
     @BeforeEach
     void setUp() {
         counter = 0;
-        locker = new GlobalEntityLocker<>(new BasicEntityLocker<>());
+        locker = new GlobalEntityLocker<>(new EscalationEntityLocker<>(new BasicEntityLocker<>(), 3));
         countDownLatchStopper = new CountDownLatch(1);
         stopperLock = new ReentrantLock();
     }

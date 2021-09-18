@@ -4,6 +4,7 @@ import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.locker.BasicEntityLocker;
+import org.locker.EntityLocker;
 import org.locker.EscalationEntityLocker;
 import org.locker.NoDeadLockEntityLocker;
 
@@ -14,13 +15,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class NoDeadLockEntityLockerTest {
 
     private static final int THRESHOLD = 3;
-    private NoDeadLockEntityLocker<Integer> locker;
+    private EntityLocker<Integer> locker;
     private volatile int counter;
 
     @BeforeEach
     void setUp() {
         counter = 0;
-        locker = new NoDeadLockEntityLocker<>(new EscalationEntityLocker<>(new BasicEntityLocker<>(), THRESHOLD));
+        locker = new EscalationEntityLocker<>(new NoDeadLockEntityLocker<>(new BasicEntityLocker<>()), THRESHOLD);
     }
 
     @Test
