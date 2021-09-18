@@ -358,7 +358,7 @@ class GlobalEntityLockerTest {
                 counter++;
             } finally {
                 for (int j = 0; j < numberOfLocks; j++) {
-                    unlock();
+                    locker.unlock();
                 }
             }
         }

@@ -140,7 +140,7 @@ class BasicEntityLockerTest {
                 counter++;
             } finally {
                 for (int j = 0; j < numberOfLocks; j++) {
-                    unlock(1);
+                    locker.unlock(1);
                 }
             }
         }
