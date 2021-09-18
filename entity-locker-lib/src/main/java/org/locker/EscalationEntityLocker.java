@@ -4,7 +4,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
 public final class EscalationEntityLocker<ID> implements EntityLocker<ID> {
-
     private final int threshold;
     private final EntityLocker<ID> locker;
     private final ReentrantLock escalatedLock = new ReentrantLock();
@@ -17,11 +16,9 @@ public final class EscalationEntityLocker<ID> implements EntityLocker<ID> {
 
     public void lock(ID id) {
         locker.lock(id);
-        synchronized (this) {
-            int counter = incrementAndGetCounter();
-            if (counter > threshold) {
-                escalatedLock.lock();
-            }
+        int counter = incrementAndGetCounter();
+        if (counter > threshold) {
+            escalatedLock.lock();
         }
     }
 
@@ -29,23 +26,17 @@ public final class EscalationEntityLocker<ID> implements EntityLocker<ID> {
         if (!locker.tryLock(id, timeout, unit)) {
             return false;
         }
-        synchronized (this) {
-            int counter = incrementAndGetCounter();
-            if (counter > threshold) {
-                if (!escalatedLock.tryLock(timeout, unit)) {
-                    return false;
-                }
-            }
+        int counter = incrementAndGetCounter();
+        if (counter > threshold) {
+            return escalatedLock.tryLock(timeout, unit);
         }
         return true;
     }
 
     public void unlock(ID id) {
-        synchronized (this) {
-            int counter = decrementAndGetCounter();
-            if (counter > threshold) {
-                escalatedLock.unlock();
-            }
+        int counter = decrementAndGetCounter();
+        if (counter > threshold) {
+            escalatedLock.unlock();
         }
         locker.unlock(id);
     }
