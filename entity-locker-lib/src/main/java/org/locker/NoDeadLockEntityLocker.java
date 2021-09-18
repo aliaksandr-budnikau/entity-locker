@@ -1,10 +1,10 @@
 package org.locker;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import static java.lang.String.format;
@@ -17,13 +17,13 @@ public final class NoDeadLockEntityLocker<ID> implements EntityLocker<ID> {
 
     public NoDeadLockEntityLocker(EntityLocker<ID> locker) {
         this.locker = locker;
-        resourceId2resourceMap = new HashMap<>();
-        threadId2PendingResourceMap = new HashMap<>();
+        resourceId2resourceMap = new ConcurrentHashMap<>();
+        threadId2PendingResourceMap = new ConcurrentHashMap<>();
     }
 
     public void lock(ID id) {
-        synchronized (lockObject) {
-            if (resourceId2resourceMap.containsKey(id)) {
+        if (resourceId2resourceMap.containsKey(id)) {
+            synchronized (lockObject) {
                 addPendingResource(id, getThreadId());
                 if (hasDeadlock(id)) {
                     removePendingResource();
@@ -32,10 +32,8 @@ public final class NoDeadLockEntityLocker<ID> implements EntityLocker<ID> {
             }
         }
         locker.lock(id);
-        synchronized (lockObject) {
-            removePendingResource();
-            addResource(id, getThreadId());
-        }
+        removePendingResource();
+        addResource(id, getThreadId());
     }
 
     public boolean tryLock(ID id, long timeout, TimeUnit unit) throws InterruptedException {
@@ -43,10 +41,8 @@ public final class NoDeadLockEntityLocker<ID> implements EntityLocker<ID> {
     }
 
     public void unlock(ID id) {
-        synchronized (lockObject) {
-            removeResource(id);
-            locker.unlock(id);
-        }
+        removeResource(id);
+        locker.unlock(id);
     }
 
     void addResource(ID id, long ownerThreadId) {
