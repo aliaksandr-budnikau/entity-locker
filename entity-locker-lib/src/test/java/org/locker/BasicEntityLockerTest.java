@@ -1,4 +1,4 @@
-package org.locker.tests;
+package org.locker;
 
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
@@ -52,7 +52,7 @@ class BasicEntityLockerTest {
         thread2.join();
         thread3.join();
         assertEquals(endExclusive * 3, counter);
-        //assertEquals(0, locker.getLocksNumber());
+        assertEquals(0, locker.getLocksNumber());
     }
 
     @Test
@@ -70,7 +70,7 @@ class BasicEntityLockerTest {
         }
 
         assertEquals(1, counter);
-        //assertEquals(0, locker.getLocksNumber());
+        assertEquals(0, locker.getLocksNumber());
     }
 
     @Test
@@ -92,7 +92,7 @@ class BasicEntityLockerTest {
             unlock(1);
         }
         assertEquals(1, counter);
-        //assertEquals(0, locker.getLocksNumber());
+        assertEquals(0, locker.getLocksNumber());
     }
 
     @Test
