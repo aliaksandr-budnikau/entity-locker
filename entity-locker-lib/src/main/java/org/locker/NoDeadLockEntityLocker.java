@@ -9,19 +9,19 @@ import java.util.concurrent.TimeUnit;
 
 import static java.lang.String.format;
 
-public class NoDeadLockEntityLocker<ID> {
+public final class NoDeadLockEntityLocker<ID> implements EntityLocker<ID> {
     private final Object lockObject = new Object();
     private final Map<ID, Resource<ID>> resourceId2resourceMap;
     private final Map<Long, Resource<ID>> threadId2PendingResourceMap;
-    private final EscalationSyncEntityLocker<ID> locker;
+    private final EntityLocker<ID> locker;
 
-    public NoDeadLockEntityLocker(EscalationSyncEntityLocker<ID> locker) {
+    public NoDeadLockEntityLocker(EntityLocker<ID> locker) {
         this.locker = locker;
         resourceId2resourceMap = new HashMap<>();
         threadId2PendingResourceMap = new HashMap<>();
     }
 
-    public void lock(ID id) throws InterruptedException {
+    public void lock(ID id) {
         synchronized (lockObject) {
             if (resourceId2resourceMap.containsKey(id)) {
                 addPendingResource(id, getThreadId());

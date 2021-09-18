@@ -4,12 +4,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
-public final class GlobalSyncEntityLocker<ID> {
-    private final SyncEntityLocker<ID> locker;
+public final class GlobalEntityLocker<ID> {
+    private final EntityLocker<ID> locker;
     private final ReentrantLock globalLock = new ReentrantLock();
     private final AtomicInteger entityLocksCounter = new AtomicInteger();
 
-    public GlobalSyncEntityLocker(SyncEntityLocker<ID> locker) {
+    public GlobalEntityLocker(EntityLocker<ID> locker) {
         this.locker = locker;
     }
 

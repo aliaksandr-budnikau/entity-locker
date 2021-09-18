@@ -2,10 +2,9 @@ package org.locker.tests;
 
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
-import org.locker.EscalationSyncEntityLocker;
-import org.locker.GlobalSyncEntityLocker;
+import org.locker.BasicEntityLocker;
+import org.locker.EscalationEntityLocker;
 import org.locker.NoDeadLockEntityLocker;
-import org.locker.SyncEntityLocker;
 
 /**
  * t1 == thread1
@@ -22,7 +21,7 @@ class NoDeadLockEntityLockerFor1ThreadsTest {
 
     @SneakyThrows
     private void reproduceDeadlock() {
-        NoDeadLockEntityLocker<Integer> locker = new NoDeadLockEntityLocker<>(new EscalationSyncEntityLocker<>(new GlobalSyncEntityLocker<>(new SyncEntityLocker<>(null)), 100));
+        NoDeadLockEntityLocker<Integer> locker = new NoDeadLockEntityLocker<>(new EscalationEntityLocker<>(new BasicEntityLocker<>(), 100));
         locker.lock(1);
         try {
             locker.lock(1);

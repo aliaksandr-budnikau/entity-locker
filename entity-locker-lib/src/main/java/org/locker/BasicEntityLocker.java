@@ -1,14 +1,14 @@
 package org.locker;
 
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
-public final class SyncEntityLocker<ID> extends EntityLockerDecorator<ID> {
-    private final ConcurrentHashMap<ID, ReentrantLock> locks;
+public final class BasicEntityLocker<ID> implements EntityLocker<ID> {
+    private final Map<ID, ReentrantLock> locks;
 
-    public SyncEntityLocker(EntityLocker<ID> locker) {
-        super(locker);
+    public BasicEntityLocker() {
         locks = new ConcurrentHashMap<>();
     }
 
@@ -20,6 +20,7 @@ public final class SyncEntityLocker<ID> extends EntityLockerDecorator<ID> {
         }
     }
 
+    @Override
     public boolean tryLock(ID id, long timeout, TimeUnit unit) throws InterruptedException {
         ReentrantLock lock = getLock(id, timeout, unit);
         return lock != null;

@@ -1,11 +1,15 @@
-package org.locker;
+package org.locker.tests;
 
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.locker.BasicEntityLocker;
 
-import java.lang.ref.WeakReference;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static java.lang.Math.random;
 import static java.util.concurrent.CompletableFuture.runAsync;
@@ -16,14 +20,18 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class SyncEntityLockerTest {
-    private SyncEntityLocker<Integer> locker;
+class BasicEntityLockerTest {
+    private BasicEntityLocker<Integer> locker;
     private volatile int counter;
+    private CountDownLatch countDownLatchStopper;
+    private Lock stopperLock;
 
     @BeforeEach
     void setUp() {
         counter = 0;
-        locker = new SyncEntityLocker<>(null);
+        locker = new BasicEntityLocker<>();
+        countDownLatchStopper = new CountDownLatch(1);
+        stopperLock = new ReentrantLock();
     }
 
     @Test
@@ -49,16 +57,16 @@ class SyncEntityLockerTest {
 
     @Test
     void reentrantLocking() {
-        locker.lock(1);
+        lock(1);
         try {
-            locker.lock(1);
+            lock(1);
             try {
                 counter++;
             } finally {
-                locker.unlock(1);
+                unlock(1);
             }
         } finally {
-            locker.unlock(1);
+            unlock(1);
         }
 
         assertEquals(1, counter);
@@ -67,21 +75,21 @@ class SyncEntityLockerTest {
 
     @Test
     void reentrantLockingOverOtherId() {
-        locker.lock(1);
+        lock(1);
         try {
-            locker.lock(2);
+            lock(2);
             try {
-                locker.lock(1);
+                lock(1);
                 try {
                     counter++;
                 } finally {
-                    locker.unlock(1);
+                    unlock(1);
                 }
             } finally {
-                locker.unlock(2);
+                unlock(2);
             }
         } finally {
-            locker.unlock(1);
+            unlock(1);
         }
         assertEquals(1, counter);
         //assertEquals(0, locker.getLocksNumber());
@@ -90,30 +98,30 @@ class SyncEntityLockerTest {
     @Test
     @SneakyThrows
     void timeout() {
+        stopperLock.lock();
+
         runAsync(() -> {
-            locker.lock(1);
+            lock(1);
             try {
-                sleep(3000);
+                countDownLatchStopper.countDown();
+                stopperLock.lock();
             } finally {
-                locker.unlock(1);
+                unlock(1);
             }
         });
 
+        countDownLatchStopper.await();
         CompletableFuture<Boolean> future = supplyAsync(() -> {
             try {
-                sleep(25);
-                return locker.tryLock(1, 10, MILLISECONDS);
-            } catch (InterruptedException e) {
+                return tryLock(1, 10, MILLISECONDS);
+            } catch (Exception e) {
             }
             return true;
         });
 
         assertFalse(future.join());
-    }
 
-    @SneakyThrows
-    private void sleep(int millis) {
-        Thread.sleep(millis);
+        stopperLock.unlock();
     }
 
     @SneakyThrows
@@ -124,16 +132,16 @@ class SyncEntityLockerTest {
             for (int j = 0; j < numberOfLocks; j++) {
                 int lockType = (int) (random() * 2);
                 if (lockType == 0) {
-                    locker.lock(1);
+                    lock(1);
                 } else {
-                    locker.tryLock(1, 1, HOURS);
+                    tryLock(1, 1, HOURS);
                 }
             }
             try {
                 counter++;
             } finally {
                 for (int j = 0; j < numberOfLocks; j++) {
-                    locker.unlock(1);
+                    unlock(1);
                 }
             }
         }
@@ -142,14 +150,18 @@ class SyncEntityLockerTest {
     @Test
     @SneakyThrows
     void entityLockedAndUnlocked_noTimeout() {
+        stopperLock.lock();
+        int timeout = 500;
+
         runAsync(() -> {
             int id = 1;
             lock(id);
             unlock(id);
-            sleep(5000);
+            countDownLatchStopper.countDown();
+            stopperLock.lock();
         });
 
-        int timeout = 500;
+        countDownLatchStopper.await();
         assertTrue(supplyAsync(() -> {
             int id = 1;
             try {
@@ -158,7 +170,6 @@ class SyncEntityLockerTest {
                 unlock(id);
             }
         }).join());
-
         assertTrue(supplyAsync(() -> {
             int id = 2;
             try {
@@ -167,19 +178,25 @@ class SyncEntityLockerTest {
                 unlock(id);
             }
         }).join());
+
+        stopperLock.unlock();
     }
 
     @Test
     @SneakyThrows
     void entityLockedWithTimeoutAndUnlocked_noTimeout() {
+        stopperLock.lock();
         int timeout = 500;
+
         runAsync(() -> {
             int id = 1;
             tryLock(id, timeout);
             unlock(id);
-            sleep(200);
+            countDownLatchStopper.countDown();
+            stopperLock.lock();
         });
 
+        countDownLatchStopper.await();
         assertTrue(supplyAsync(() -> {
             int id = 1;
             try {
@@ -188,7 +205,6 @@ class SyncEntityLockerTest {
                 unlock(id);
             }
         }).join());
-
         assertTrue(supplyAsync(() -> {
             int id = 2;
             try {
@@ -197,19 +213,24 @@ class SyncEntityLockerTest {
                 unlock(id);
             }
         }).join());
+
+        stopperLock.unlock();
     }
 
     @Test
     @SneakyThrows
     void entityLocked_timeout() {
+        stopperLock.lock();
+        int timeout = 5;
+
         runAsync(() -> {
             int id = 1;
             lock(id);
-            sleep(5000);
+            countDownLatchStopper.countDown();
+            stopperLock.lock();
         });
 
-        int timeout = 5;
-        sleep(20);
+        countDownLatchStopper.await();
         assertFalse(supplyAsync(() -> tryLock(1, timeout)).join());
         assertTrue(supplyAsync(() -> {
             int id = 2;
@@ -219,19 +240,24 @@ class SyncEntityLockerTest {
                 unlock(id);
             }
         }).join());
+
+        stopperLock.unlock();
     }
 
     @Test
     @SneakyThrows
     void entityLockedWithTimeout_timeout() {
+        stopperLock.lock();
         int timeout = 50;
+
         runAsync(() -> {
             int id = 1;
             tryLock(id, timeout);
-            sleep(5000);
+            countDownLatchStopper.countDown();
+            stopperLock.lock();
         });
 
-        sleep(20);
+        countDownLatchStopper.await();
         assertFalse(supplyAsync(() -> tryLock(1, timeout)).join());
         assertTrue(supplyAsync(() -> {
             int id = 2;
@@ -241,6 +267,8 @@ class SyncEntityLockerTest {
                 unlock(id);
             }
         }).join());
+
+        stopperLock.unlock();
     }
 
     @SneakyThrows
@@ -248,6 +276,7 @@ class SyncEntityLockerTest {
         locker.lock(id);
     }
 
+    @SneakyThrows
     private void unlock(int id) {
         locker.unlock(id);
     }
@@ -256,4 +285,10 @@ class SyncEntityLockerTest {
     private boolean tryLock(int id, int timeout) {
         return locker.tryLock(id, timeout, MILLISECONDS);
     }
+
+    @SneakyThrows
+    private boolean tryLock(int id, int timeout, TimeUnit unit) {
+        return locker.tryLock(id, timeout, unit);
+    }
+
 }
