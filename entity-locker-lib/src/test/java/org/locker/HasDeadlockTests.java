@@ -133,4 +133,16 @@ class HasDeadlockTests {
         assertFalse(locker.hasDeadlock(2));
         assertFalse(locker.hasDeadlock(3));
     }
+
+    @Test
+    public void test() {
+        long thread1 = Thread.currentThread().getId();
+        long thread2 = -2l;
+
+        locker.addResource(1, thread1);
+        locker.addPendingResource(1, thread1);
+        locker.addPendingResource(1, thread2);
+
+        assertFalse(locker.hasDeadlock(1));
+    }
 }

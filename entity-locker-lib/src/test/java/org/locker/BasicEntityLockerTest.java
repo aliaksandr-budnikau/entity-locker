@@ -3,7 +3,6 @@ package org.locker;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.locker.BasicEntityLocker;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -132,9 +131,9 @@ class BasicEntityLockerTest {
             for (int j = 0; j < numberOfLocks; j++) {
                 int lockType = (int) (random() * 2);
                 if (lockType == 0) {
-                    lock(1);
+                    locker.lock(1);
                 } else {
-                    tryLock(1, 1, HOURS);
+                    locker.tryLock(1, 1, HOURS);
                 }
             }
             try {

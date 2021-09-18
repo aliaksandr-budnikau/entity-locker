@@ -272,11 +272,11 @@ class EscalationEntityLockerTest {
         while (i-- != 0) {
             int numberOfLocks = (int) (random() * 3 + 1);
             for (int j = 0; j < numberOfLocks; j++) {
-                double lockType = random() * 2;
+                int lockType = (int) (random() * 2);
                 if (lockType == 0) {
-                    lock(1);
+                    locker.lock(1);
                 } else {
-                    tryLock(1, HOURS.toMillis(1));
+                    locker.tryLock(1, 1, HOURS);
                 }
             }
             try {

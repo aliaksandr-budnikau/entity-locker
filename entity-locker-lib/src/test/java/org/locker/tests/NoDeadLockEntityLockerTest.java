@@ -50,7 +50,7 @@ class NoDeadLockEntityLockerTest {
         while (i-- != 0) {
             int numberOfLocks = (int) (random() * 3 + 1);
             for (int j = 0; j < numberOfLocks; j++) {
-                double lockType = random() * 2;
+                int lockType = (int) (random() * 2);
                 if (lockType == 0) {
                     locker.lock(1);
                 } else {
